@@ -1,137 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Number Guesser</title>
-
-<style>
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:'Segoe UI',sans-serif;
-}
-
-body{
-    min-height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    background:linear-gradient(135deg,#4f46e5,#06b6d4);
-    color:white;
-}
-
-.container{
-    text-align:center;
-    max-width:700px;
-    padding:40px;
-}
-
-h1{
-    font-size:4rem;
-    margin-bottom:15px;
-}
-
-h1 span{
-    color:#facc15;
-}
-
-p{
-    font-size:1.2rem;
-    line-height:1.7;
-    margin-bottom:30px;
-    opacity:0.9;
-}
-
-.btn{
-    display:inline-block;
-    text-decoration:none;
-    color:#111827;
-    background:#facc15;
-    padding:15px 35px;
-    border-radius:50px;
-    font-size:1.1rem;
-    font-weight:600;
-    transition:.3s;
-}
-
-.btn:hover{
-    transform:translateY(-4px);
-    box-shadow:0 10px 20px rgba(0,0,0,.2);
-}
-
-.card{
-    margin-top:50px;
-    display:flex;
-    justify-content:center;
-    gap:20px;
-    flex-wrap:wrap;
-}
-
-.box{
-    background:rgba(255,255,255,0.15);
-    backdrop-filter:blur(10px);
-    padding:20px;
-    border-radius:15px;
-    width:180px;
-}
-
-.box h3{
-    font-size:1.5rem;
-    margin-bottom:10px;
-}
-
-.box p{
-    font-size:.95rem;
-    margin:0;
-}
-
-@media(max-width:768px){
-    h1{
-        font-size:2.8rem;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dino Game</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-
-    p{
-        font-size:1rem;
+    body {
+      background: #f7f7f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
     }
-}
-</style>
+    #game {
+      position: relative;
+      width: 800px;
+      height: 200px;
+      background: #fff;
+      overflow: hidden;
+      border: 2px solid #333;
+    }
+    #dino {
+      position: absolute;
+      bottom: 0;
+      left: 50px;
+      width: 40px;
+      height: 40px;
+      background: #333;
+      border-radius: 5px;
+    }
+    .obstacle {
+      position: absolute;
+      bottom: 0;
+      width: 20px;
+      height: 40px;
+      background: #555;
+      animation: moveObstacle 2s linear infinite;
+    }
+    @keyframes moveObstacle {
+      from { right: -20px; }
+      to { right: 820px; }
+    }
+    #score {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
+  <div id="game">
+    <div id="dino"></div>
+    <div id="score">0</div>
+  </div>
 
-<div class="container">
+  <script>
+    const dino = document.getElementById('dino');
+    const game = document.getElementById('game');
+    const scoreDisplay = document.getElementById('score');
+    let jumping = false;
+    let score = 0;
+    let gameOver = false;
 
-    <h1><span>🎯</span> Number Guesser</h1>
+    document.addEventListener('keydown', e => {
+      if (e.code === 'Space' && !jumping && !gameOver) jump();
+      if (e.code === 'Enter' && gameOver) restart();
+    });
 
-    <p>
-        Test your luck and logic! Guess the secret number,
-        get hints, and see how quickly you can win.
-        Challenge yourself and beat your best score.
-    </p>
+    function jump() {
+      jumping = true;
+      let jumpHeight = 0;
+      const upInterval = setInterval(() => {
+        if (jumpHeight >= 100) {
+          clearInterval(upInterval);
+          const downInterval = setInterval(() => {
+            if (jumpHeight <= 0) {
+              clearInterval(downInterval);
+              jumping = false;
+            }
+            jumpHeight -= 5;
+            dino.style.bottom = jumpHeight + 'px';
+          }, 20);
+        }
+        jumpHeight += 5;
+        dino.style.bottom = jumpHeight + 'px';
+      }, 20);
+    }
 
-    <a href="#" class="btn">Play Now</a>
+    function createObstacle() {
+      if (gameOver) return;
+      const obstacle = document.createElement('div');
+      obstacle.classList.add('obstacle');
+      game.appendChild(obstacle);
+      obstacle.style.right = '-20px';
+      let obstacleInterval = setInterval(() => {
+        let obstacleRight = parseInt(window.getComputedStyle(obstacle).right);
+        obstacle.style.right = obstacleRight + 5 + 'px';
 
-    <div class="card">
+        // Collision detection
+        let dinoBottom = parseInt(window.getComputedStyle(dino).bottom);
+        if (obstacleRight > 730 && obstacleRight < 770 && dinoBottom < 40) {
+          clearInterval(obstacleInterval);
+          obstacle.remove();
+          gameOver = true;
+          scoreDisplay.innerHTML = 'Game Over! Press Enter';
+        }
 
-        <div class="box">
-            <h3>100</h3>
-            <p>Possible Numbers</p>
-        </div>
+        if (obstacleRight > 820) {
+          clearInterval(obstacleInterval);
+          obstacle.remove();
+          score++;
+          scoreDisplay.textContent = score;
+        }
+      }, 20);
 
-        <div class="box">
-            <h3>10</h3>
-            <p>Attempts to Win</p>
-        </div>
+      // Spawn next obstacle
+      setTimeout(createObstacle, Math.random() * 2000 + 1000);
+    }
 
-        <div class="box">
-            <h3>🏆</h3>
-            <p>Beat Your Record</p>
-        </div>
+    function restart() {
+      score = 0;
+      gameOver = false;
+      scoreDisplay.textContent = score;
+      document.querySelectorAll('.obstacle').forEach(o => o.remove());
+      createObstacle();
+    }
 
-    </div>
-
-</div>
-
+    createObstacle();
+  </script>
 </body>
 </html>
